@@ -44,23 +44,16 @@ function _update()
 				local tul=sgn(mget(tx-1,ty-1)-1)+1
 				local tdr=sgn(mget(tx+1,ty+1)-1)+1
 				local tdl=sgn(mget(tx-1,ty+1)-1)+1
-				--tu+tur+tul+tr+tl+td+tdr+tdl
-				if tu+tur+tul+tr+tl+td+tdr+tdl==16 then--5 empty
-					mset(tx,ty,42)
-				elseif tu+tur+tul+tr+tl+td+tdr+tdl==14then
-					if	tur==0 then mset(tx,ty,23)
-					elseif tul==0 then mset(tx,ty,22)
-					elseif tdr==0 then mset(tx,ty,38)
-					elseif tdl==0 then mset(tx,ty,39)
-					elseif tl==0 then mset(tx,ty,25)
-					elseif tr==0 then mset(tx,ty,44)
-					elseif td==0 then mset(tx,ty,58)
-					elseif tu==0 then mset(tx,ty,11) end
-				elseif tu+tur+tul+tr+tl+td+tdr+tdl==12then
-					if tu==td==0 then mset(tx,ty,51)
-					elseif tr==tl==0 then mset(tx,ty,17)end
-					
-				end
+				local tt={tu,td,tr,tl,tur,tul,tdr,tdl}
+				if checkt(tt,{2,2,2,2,2,2,2,2,2}) then mset(tx,ty,42) end
+				if checkt(tt,{2,2,2,2,2,2,2,2,2}) then mset(tx,ty,42) end
+				if checkt(tt,{2,2,2,2,2,2,2,2,2}) then mset(tx,ty,42) end
+				if checkt(tt,{2,2,2,2,2,2,2,2,2}) then mset(tx,ty,42) end
+				if checkt(tt,{2,2,2,2,2,2,2,2,2}) then mset(tx,ty,42) end
+				if checkt(tt,{2,2,2,2,2,2,2,2,2}) then mset(tx,ty,42) end
+				if checkt(tt,{2,2,2,2,2,2,2,2,2}) then mset(tx,ty,42) end
+				if checkt(tt,{2,2,2,2,2,2,2,2,2}) then mset(tx,ty,42) end
+				if checkt(tt,{2,2,2,2,2,2,2,2,2}) then mset(tx,ty,42) end
 			end
 		end
 	end
@@ -79,14 +72,59 @@ function _draw()
 	local tul=sgn(mget(tx-1,ty-1)-1)+1
 	local tdr=sgn(mget(tx+1,ty+1)-1)+1
 	local tdl=sgn(mget(tx-1,ty+1)-1)+1
-	print(tu,0,0)
-	print(tu,0,8)
-	print(tu,0,16)
-	print(tu,0,24)
-	print(tu,0,32)
-	print(tu,0,40)
-	print(tu,0,48)
-	print(tu,0,56)
+	print(tu,8,0)
+	print(td,8,16)
+	print(tr,16,8)
+	print(tl,0,8)
+	print(tur,16,0)
+	print(tul,0,0)
+	print(tdr,16,16)
+	print(tdl,0,16)
+end
+-->8
+--				if tu+tur+tul+tr+tl+td+tdr+tdl==16 then--0 emp
+--					mset(tx,ty,42)
+--				elseif tu+tur+tul+tr+tl+td+tdr+tdl==14then--1 emp
+--					if	tur==0 then mset(tx,ty,23)
+--					elseif tul==0 then mset(tx,ty,22)
+--					elseif tdr==0 then mset(tx,ty,39)
+--					elseif tdl==0 then mset(tx,ty,38)
+--					elseif tl==0 then mset(tx,ty,25)
+--					elseif tr==0 then mset(tx,ty,44)
+--					elseif td==0 then mset(tx,ty,58)
+--					elseif tu==0 then mset(tx,ty,11) end
+--				elseif tu+tur+tul+tr+tl+td+tdr+tdl==12then--2 emp
+--					if tu+td==0 then mset(tx,ty,51)
+--					elseif tr+tl==0 then mset(tx,ty,17)
+--					elseif tur+tul==0 then mset(tx,ty,10)
+--					elseif tdr+tdl==0 then mset(tx,ty,59)
+--					elseif tdr+tul==0 then mset(tx,ty,28)
+--					elseif tur+tdl==0 then mset(tx,ty,41)
+--					else
+--					if tu+tl==0 and tul!=0 then mset(tx,ty,9)
+--					elseif tu+tr==0 and tur!=0 then mset(tx,ty,12)
+--					elseif tr+td==0 and tdr!=0 then mset(tx,ty,60)
+--					elseif td+tl==0 and tdl!=0 then mset(tx,ty,57)
+--					elseif tl==0 then mset(tx,ty,25)
+--					elseif tr==0 then mset(tx,ty,44)
+--					elseif td==0 then mset(tx,ty,58)
+--					elseif tu==0 then mset(tx,ty,11) end
+--					end
+--				elseif tu+tur+tul+tr+tl+td+tdr+tdl==10 then--3 emp
+--					if tu+tul+tl==0 then mset(tx,ty,9)
+--					elseif tu+tur+tr==0 then mset(tx,ty,12)
+--					elseif td+tdl+tl==0 then mset(tx,ty,57)
+--					elseif td+tdr+tr==0 then mset(tx,ty,60) end
+--				end
+-->8
+--uti
+function checkt(t1,t2)
+	for i,t in ipairs(t1) do
+		if t1[i]!=t2[i] then
+			return false
+		end
+	end
+	return true
 end
 __gfx__
 00000000011111100111111111111111111111104444449111111111111111111944444401111111194444911111111111111110000000000000000000000000
@@ -252,7 +290,7 @@ __label__
 88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
 
 __map__
-0000000031000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000003131310000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000003131310000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
