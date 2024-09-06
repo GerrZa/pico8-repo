@@ -1,19 +1,15 @@
 pico-8 cartridge // http://www.pico-8.com
-version 41
+version 42
 __lua__
 --main
+mode="s"
+suc=false
+sb=0
+
+slotg={}
+
 function _init()
-	mode="s"
-	suc=false
-	deft=140
-	t=0
-	sb=0
-	updateg=
 	
-	slotg={
-		t=0
-		r=0.2
-	}
 end
 
 
@@ -29,6 +25,7 @@ end
 function _draw()
 	if mode=="s" then
 		draws()
+	elseif mode=="game"
 	end
 end
 -->8
@@ -36,10 +33,6 @@ end
 function updates()
 	sb+=0.0925
 	if btnp(4) or btnp(5) then mode="w" end
-end
-
-function dug()
-	t-=1
 end
 
 function uslot()
