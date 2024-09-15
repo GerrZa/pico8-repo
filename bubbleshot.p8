@@ -9,6 +9,9 @@ function _init()
 end
 
 function _update()
+	if game_scene.p_state==1 then
+		game_scene:update()
+	end
 end
 
 function _draw()
@@ -20,6 +23,9 @@ game_scene={
 	my=0,
 	cl=0,
 	obj={},
+	plr={},
+	p_state=1,
+	moving_cam=0
 	
 	new=function(self,o)
 		o=o or {}
@@ -27,12 +33,17 @@ game_scene={
 		return o
 	end,
 	
+	update=function(self)
+		
+		if plr.x>120 then
+			
+		end
+	end
+	
 	draw=function(self)
 		cls()
 		
-		for i in all(self.obj) do
-			spr(i.s,i.x,i.y)
-		end
+		
 	end
 }
 
