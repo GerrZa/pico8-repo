@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
---jack's stack v0.9
+--jack's stack v0.9.5
 --by triz
 
 gscene = {
@@ -18,7 +18,6 @@ gscene = {
 	etime=1+rnd(3*30),
 	ptsel=1,
 	phold=0,
-	partcd=5,
 	camsh=0,
 	php=5,
 	ehp=5,
@@ -119,13 +118,7 @@ gscene = {
 	
 	addtok=
 	function(s,ene,p)
-		local tok={val=sgn(1-rnd(2))}
-		if (p) tok.val=1
-		if tok.val==1 then
-			tok.s=39
-		else
-			tok.s=7
-		end
+		local tok={val=-1,s=7}
 		if ene then
 		 add(s.etok,tok)
 		else
@@ -167,165 +160,57 @@ gscene = {
 	
 	eneplace=
 	function(s)
-	 local smch=rnd(1)
-	 if smch<=dif[globedif] then --being smart
-	  s.lastenemove="smart"
-	  local ssmart=false
-	  if (rnd(1)>0.5 and globedif==3) ssmart=true
-	  if count(s.etok,{val=1})==3 then
-	  	local place={0,{val=0}}
-	  	local stragp={}
-	  	local cheat={}
-	  	for crd in all(s.ecard) do
-	 		 local sumval=s.stack+crd.val
-	  		if sumval==21 then
-	  		 place[1]=crd
-	  		end
-	  		if sumval<22 then
-	  		 if sumval>s.stack+place[2].val then
-		  		 place[2]=crd
-	  		 end
-	  		 
-	  		 if ssmart then
-		  		 local makego=0
-		  		 for pc in all(s.pcard) do
-		  		  if sumval+pc.val>21 then
-									makego+=1
-									if makego==3 then
-									 add(cheat,crd)
-									 break
-									end
-		  		  end
-		  		 end
-		  		end
-	  		end
-	  		if sumval<11 and sumval>0 and globedif==3 then
-	  		 add(stragp,crd)
-	  		end
-	  	end
-	  	--place
-	  	if place[1]!=0 then
-	  	 s:eaddstack(place[1].val)
-	  	 del(s.ecard,place[1])
-	  	 deli(s.etok,1)
-	  	 s:addcard(true)
-	  	 s:addtok(true)
-	  	elseif #cheat>0 then
-	  	 local holdc=cheat[ceil(rnd(#cheat))]
-	  	 s:eaddstack(holdc.val,s.etok[1])
-	  	 del(s.ecard,holdc)
-	  	 deli(s.etok,1)
-	  	 s:addcard(true)
-	  	 s:addtok(true)
-	  	elseif #stragp>0 then
-	  	 local holdc=stragp[ceil(rnd(#stragp))]
-	  	 s:eaddstack(holdc.val,s.etok[1])
-	  	 del(s.ecard,holdc)
-	  	 deli(s.etok,1)
-	  	 s:addcard(true)
-	  	 s:addtok(true)
-	  	elseif place[2]!={val=0} then
-	  	 s:eaddstack(place[2].val)
-	  	 del(s.ecard,place[2])
-	  	 deli(s.etok,1)
-	  	 s:addcard(true)
-	  	 s:addtok(true)
-	  	else
-	  	 local holdc=s.ecard[ceil(rnd(3))]
-	  		s:eaddstack(holdc.val)
-	  		del(s.ecard,holdc)
-	  		deli(s.etok,1)
-	  	 s:addcard(true)
-	  	 s:addtok(true)
-	  	end
-	  ------
-	  elseif count(s.etok,{val=-1})==3 then
-	   local place={}
-	   local cheat={}
-	  	for crd in all(s.ecard) do
-	 		 local sumval=s.stack-crd.val
-	  		if sumval>-1 then
-	  		 add(place,crd)
-	  		 local makego=0
-	  		 for pcrd in all(s.pcard) do
-	  		  if sumval-pcrd.val<0 then
-	  		  	makego+=1
-	  		  	if makego==3 then
-	  		  	 add(cheat,crd)
-	  		  		break
-	  		  	end
-	  		  end
-	  		 end
-	  		end
-	  	end
-	  	
-	  	if (#place<1) place=s.pcard
-	  	
-	  	if #cheat>0 then
-	  		local holdc=cheat[ceil(rnd(#cheat))]
-	  		s:eaddstack(holdc.val)
-		  	del(s.ecard,holdc)
-		  	deli(s.etok,1)
-	  	 s:addcard(true)
-	  	 s:addtok(true)
-	  	else
-		  	local chosecard=place[ceil(rnd(#place))]
-		  	s:eaddstack(chosecard.val)
-		  	del(s.ecard,chosecard)
-		  	deli(s.etok,1)
-	  	 s:addcard(true)
-	  	 s:addtok(true)
-	  	end
-	  	
-	  else
-	   local perfect={}
-	   local place={}
-	  	for crd in all(s.ecard) do
-	  		for t in all(s.etok) do
-	  		 local sumval=s.stack+(crd.val*t.val)
-	  		 if sumval==21 then
-	  		  add(perfect,{crd,t})
-	  		 elseif sumval>-1 and sumval<22 then
-	  		  add(place,{crd,t})
-	  		 end
-	  		end
-	  	end
-	  	
-	  	if #perfect>0 then
-	  	 local holdmat=perfect[ceil(rnd(#perfect))]
-	  	 s:eaddstack(holdmat[1].val*holdmat[2].val)
-	  	 del(s.ecard,holdmat[1])
-	  	 del(s.etok,holdmat[2])
-	  	 s:addcard(true)
-	  	 s:addtok(true)
-	  	elseif #place>0 then
-	  	 local holdmat=place[ceil(rnd(#place))]
-	  	 s:eaddstack(holdmat[1].val*holdmat[2].val)
-	  	 del(s.ecard,holdmat[1])
-	  	 del(s.etok,holdmat[2])
-	  	 s:addcard(true)
-	  	 s:addtok(true)
-	  	else
-	  	 local holdmat={s.ecard[ceil(rnd(#s.ecard))],s.etok[ceil(rnd(#s.etok))]}
-	  	 s:eaddstack(holdmat[1].val*holdmat[2].val)
-	  	 del(s.ecard,holdmat[1])
-	  	 del(s.etok,holdmat[2])
-	  	 s:addcard(true)
-	  	 s:addtok(true)
-	  	end
-	  end
-	 else
-	  s.lastenemove="dumb"
-	  local ehold=0
-	  local chold=s.ecard[ceil(rnd(3))]
-	  local thold=s.etok[ceil(rnd(3))]
-	  ehold=chold.val*thold.val
-	  del(s.ecard,chold)
-	  del(s.etok,thold)
-	  s:addcard(true)
-	  s:addtok(true)
-	  s:eaddstack(ehold)
-	 end
+		local smch=rnd(1)
+		if smch<dif[globedif] then
+			local place={}
+			local miplace={}
+			local stragplace={}
+			local cheat={}
+			for crd in all(s.ecard) do
+				local sumval=s.stack+crd.val
+				if (sumval>0 and sumval<22) add(place,crd)
+				if globedif>2 then
+				 if rnd(1)>=0.5 then
+				 	local makego=0
+				 	for crd in all(s.pcard) do
+				 		if (sumval+crd.val>21) makego+=1
+				 		if (makego==3) add(cheat,crd)
+				 	end
+				 end
+				end
+				
+				sumval=s.stack-crd.val
+				if (sumval>0) add(miplace,crd)
+				if (sumval>0 and sumval<11) add(stragplace,crd)
+			end
+			
+			if #cheat>0 then
+			 local holdc=cheat[ceil(rnd(#cheat))]
+			 s:eaddstack(holdc.val)
+			 del(s.ecard,holdc)
+			 deli(s.etok,1)
+			 s:addcard(true)
+			elseif #place>0 then
+			 local holdc=place[ceil(rnd(#place))]
+			 s:eaddstack(holdc.val)
+			 del(s.ecard,holdc)
+			 deli(s.etok,1)
+			 s:addcard(true)
+			elseif #stragplace>0 then
+			 local holdc=stragplace[ceil(rnd(#stragplace))]
+			 s:eaddstack(-holdc.val)
+			 del(s.ecard,holdc)
+			 deli(s.etok,1)
+			 s:addcard(true)
+			elseif #miplace>0 then
+			 local holdc=miplace[ceil(rnd(#miplace))]
+			 s:eaddstack(-holdc.val)
+			 del(s.ecard,holdc)
+			 deli(s.etok,1)
+			 s:addcard(true)
+			end
+			
+		end
 	end,
 	
 	ufade=
@@ -345,17 +230,7 @@ gscene = {
 	 if s.it > 5 and s.it%6==0 and s.ii>0 then
 	 	s:addcard(false)
 	 	s:addcard(true)
-	 	local addp=false
-	 	if #s.ptok>1 then
-		 	for t in all(s.ptok) do
-		 		if (t.val<0) addp=true
-		 	end
-		 end
-	 	if addp then
-		 	s:addtok(false,true)
-	 	else
-		 	s:addtok(false)
-	 	end
+	 	s:addtok(false)
 	 	s:addtok(true)
 	 	s.ii-=1
 	 end
@@ -527,11 +402,41 @@ gscene = {
 				s.ptok[i].xoff=0
 			end
 		
-		if btnp(❎) then
-			s.phold={s.pcard[s.psel],s.pcard[s.psel].val}
-			s.state="pt"
-			sfx(1)
-		end
+		local bpress=0
+		if (btnp(❎)) bpress=1
+		if (btnp(🅾️)) bpress=-1
+		
+		if bpress!=0 then
+				s.camsh=5
+				s:explode()
+				s.stack+=s.pcard[s.psel].val*bpress
+				s.psel=1
+				if s.stack==21 then
+				 s:downhp(true)
+				 s:addtxt("perfect!",50,62,11)
+				 s.state="ng"
+				 sfx(4)
+				elseif s.stack>-1 and s.stack<22 then
+					s.state="e"
+					s.etime=20+ceil(rnd(2*30))
+					local at="-"..s.pcard[s.psel].val
+					local atc=8
+					if bpress>0 then
+						at="+"..s.pcard[s.psel].val
+						atc=11
+					end
+					s:addtxt(at,60,60,atc)
+				else
+					s.state="ng"
+				 s:downhp(false)
+					s:addtxt("aww:(",58,60,8)
+					sfx(6)
+				end
+				sfx(3)
+				deli(s.pcard,s.psel)
+				if (bpress<0) deli(s.ptok,1)
+				s:addcard(false)
+			end
 		
 		---
 		elseif s.state=="pt" then
@@ -557,40 +462,40 @@ gscene = {
 				end
 			end
 			
-			if btnp(❎) then
-				local holdv=s.phold[2]*s.ptok[s.ptsel].val
-				s.camsh=5
-				s:explode()
-				s.stack+=holdv
-				del(s.pcard,s.phold[1])
-				del(s.ptok,s.ptok[s.ptsel])
-				s:addcard(false)
-				s:addtok(false)
-				s.psel=1
-				s.ptsel=1
-				if s.stack==21 then
-				 s:downhp(true)
-				 s:addtxt("perfect!",50,62,11)
-				 s.state="ng"
-				 sfx(4)
-				elseif s.stack>-1 and s.stack<22 then
-					s.state="e"
-					s.etime=20+ceil(rnd(2*30))
-					local at="-"..s.phold[2]
-					local atc=8
-					if holdv>0 then
-						at="+"..s.phold[2]
-						atc=11
-					end
-					s:addtxt(at,60,60,atc)
-				else
-					s.state="ng"
-				 s:downhp(false)
-					s:addtxt("aww:(",58,60,8)
-					sfx(6)
-				end
-				sfx(3)
-			end
+--			if btnp(❎) then
+--				local holdv=s.phold[2]*s.ptok[s.ptsel].val
+--				s.camsh=5
+--				s:explode()
+--				s.stack+=holdv
+--				del(s.pcard,s.phold[1])
+--				del(s.ptok,s.ptok[s.ptsel])
+--				s:addcard(false)
+--				s:addtok(false)
+--				s.psel=1
+--				s.ptsel=1
+--				if s.stack==21 then
+--				 s:downhp(true)
+--				 s:addtxt("perfect!",50,62,11)
+--				 s.state="ng"
+--				 sfx(4)
+--				elseif s.stack>-1 and s.stack<22 then
+--					s.state="e"
+--					s.etime=20+ceil(rnd(2*30))
+--					local at="-"..s.phold[2]
+--					local atc=8
+--					if holdv>0 then
+--						at="+"..s.phold[2]
+--						atc=11
+--					end
+--					s:addtxt(at,60,60,atc)
+--				else
+--					s.state="ng"
+--				 s:downhp(false)
+--					s:addtxt("aww:(",58,60,8)
+--					sfx(6)
+--				end
+--				sfx(3)
+--			end
 		---
 		elseif s.state=="e" then
 			for i=1,#s.pcard do
@@ -662,7 +567,6 @@ gscene = {
 		ncirc.x+=cos(ncirc.dir)*14
 		ncirc.y+=sin(ncirc.dir)*14
 		add(s.cenpart,ncirc)
-		
 		
 		if #s.cenpart>1 then
 			for i=#s.cenpart,2,-1 do
