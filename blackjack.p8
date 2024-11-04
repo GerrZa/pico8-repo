@@ -22,6 +22,10 @@ gscene = {
 	php=5,
 	ehp=5,
 	txtfx={},
+	lastmove=-1,
+	ecp,
+	emich,
+	laststack=0,
 	lastenemove="dumb",
 	cenpart={
 		{x=64,y=64,r=20}
@@ -112,13 +116,15 @@ gscene = {
 				yoff=0,
 				val=ceil(rnd(10)),
 			}
+			local kch={"k","q","j"}
+			if (ncard.val==10) ncard.ch=kch[ceil(rnd(3))]
 			add(s.pcard,ncard)
 		end
 	end,
 	
 	addtok=
 	function(s,ene,p)
-		local tok={val=-1,s=7}
+		local tok={s=7}
 		if ene then
 		 add(s.etok,tok)
 		else
@@ -133,84 +139,173 @@ gscene = {
 	
 	eaddstack=
 	function(s,val)
-	  s.stack+=val
-	  s:explode()
-	  s.camsh=5
-	  if s.stack==21 then
-	   s.state="ng"
-			 s:downhp(false)
-			 s:addtxt("perfect!",50,62,11)
-			 sfx(6)
-			elseif s.stack>-1 and s.stack<22 then
-				s.state="pc"
-				local at=val
-				local atc=8
-				if val>0 then
-					at="+"..val
-					atc=11
-				end
-				s:addtxt(at,60,60,atc)
-			else
-			 s:downhp(true)
-				s.state="ng"
-				s:addtxt("aww:(",58,60,8)
-				sfx(4)
+		sfx(3)
+  s.stack+=val
+  s:explode()
+  s.camsh=5
+  if s.stack==21 then
+   s.state="ng"
+		 s:downhp(false)
+		 s:addtxt("perfect!",50,62,11)
+		 sfx(6)
+		elseif s.stack>-1 and s.stack<22 then
+			s.state="pc"
+			local at=val
+			local atc=8
+			if val>0 then
+				at="+"..val
+				atc=11
 			end
+			s:addtxt(at,60,60,atc)
+		else
+		 s:downhp(true)
+			s.state="ng"
+			s:addtxt("aww:(",58,60,8)
+			sfx(4)
+		end
 	end,
 	
 	eneplace=
 	function(s)
-		local smch=rnd(1)
-		if smch<dif[globedif] then
-			local place={}
-			local miplace={}
-			local stragplace={}
-			local cheat={}
-			for crd in all(s.ecard) do
-				local sumval=s.stack+crd.val
-				if (sumval>0 and sumval<22) add(place,crd)
-				if globedif>2 then
-				 if rnd(1)>=0.5 then
-				 	local makego=0
-				 	for crd in all(s.pcard) do
-				 		if (sumval+crd.val>21) makego+=1
-				 		if (makego==3) add(cheat,crd)
-				 	end
-				 end
-				end
-				
-				sumval=s.stack-crd.val
-				if (sumval>0) add(miplace,crd)
-				if (sumval>0 and sumval<11) add(stragplace,crd)
-			end
-			
-			if #cheat>0 then
-			 local holdc=cheat[ceil(rnd(#cheat))]
-			 s:eaddstack(holdc.val)
-			 del(s.ecard,holdc)
-			 deli(s.etok,1)
-			 s:addcard(true)
-			elseif #place>0 then
-			 local holdc=place[ceil(rnd(#place))]
-			 s:eaddstack(holdc.val)
-			 del(s.ecard,holdc)
-			 deli(s.etok,1)
-			 s:addcard(true)
-			elseif #stragplace>0 then
-			 local holdc=stragplace[ceil(rnd(#stragplace))]
-			 s:eaddstack(-holdc.val)
-			 del(s.ecard,holdc)
-			 deli(s.etok,1)
-			 s:addcard(true)
-			elseif #miplace>0 then
-			 local holdc=miplace[ceil(rnd(#miplace))]
-			 s:eaddstack(-holdc.val)
-			 del(s.ecard,holdc)
-			 deli(s.etok,1)
-			 s:addcard(true)
-			end
-			
-		end
+	 local mc=1 --minus chance
+	 local smart=1
+	 local cheat=1
+	 if s.ehp==1 then
+	  mc=1
+	  smart=0.9
+	  cheat=0.5
+	 elseif s.ehp <=3 then
+	  mc=0.7
+	  smart=0.7
+	  cheat=0.3
+	 else
+	  mc=0.3
+	  smart=0.5
+	  cheat=0.1
+	 end
+	 
+	 if (dif<2) smart=0
+	 if (dif<3) cheat=0
+	 
+	 local cp=false
+	 for crd in all(s.ecard) do
+	  local sumval=s.stack+crd.val
+	  if sumval<22 then
+	   cp=true
+	   break
+	  end
+	 end
+	 
+	 s.ecp=cp
+	 s.emich=mc
+	 s.laststack=s.stack
+	 
+	 ----place logic----
+	 if cp==false and #s.etok>0 and rnd(1)<=mc then --(-)
+	  if rnd(1)<=smart then
+	   local cheatc={}
+	   for crd in all(s.ecard) do
+	    add(cheatc,crd)
+	    local sumval=s.stack-crd.val
+	    for pcrd in all(s.pcard) do
+	     if sumval+pcrd.val>22 then
+		     del(cheatc,crd)
+		     break
+	     end
+	    end
+	   end
+	   
+	   if dif==3 and #cheatc>0 then
+		   local hold=cheatc[ceil(rnd(#cheatc))]
+		   s:eaddstack(-hold.val)
+		   del(s.ecard,hold)
+		   deli(s.etok,1)
+		   s:addcard(true)
+		   s.lastmove=1
+	   else
+		   local hold=s.ecard[ceil(rnd(#s.ecard))]
+		   s:eaddstack(-hold.val)
+		   del(s.ecard,hold)
+		   deli(s.etok,1)
+		   s:addcard(true)
+		   s.lastmove=2
+	   end
+	  else
+	   local most={val=0}
+	   for crd in all(s.ecard) do
+	    if crd.val>most.val then
+	     most=crd
+	    end
+	   end
+	   
+	   s:eaddstack(-most.val)
+	   del(s.ecard,most)
+	   deli(s.etok,1)
+	   s:addcard(true)
+	   s.lastmove=3
+	  end
+	 elseif cp then --(+)
+	  local place={}
+	  for crd in all(s.ecard) do
+	  	if (s.stack+crd.val<22) add(place,crd)
+	  end
+	  
+	  if dif==3 then--if hard
+	   local cheatc={}
+	   local noperfect={}
+	   for crd in all(place) do
+	    local sumval=s.stack+crd.val
+	    add(cheatc,crd)
+	    add(noperfect,crd)
+	    for pcrd in all(s.pcrad) do--if plr can plus del card from list
+	     if sumval+pcrd.val<22 then
+	      del(cheatc,crd)
+	     end
+	     if sumval+pcrd.val==21 then
+	      del(noperfect,crd)
+	     end
+	    end
+	   end
+	   
+	   if #cheatc>0 and rnd(1)<=cheat then
+	   	local hold=cheatc[ceil(rnd(#cheatc))]
+	   	del(s.ecard,hold)
+		   s:eaddstack(hold.val)
+		   s:addcard(true)
+		   s.lastmove=4
+	   elseif #noperfect>0 and rnd(1)<=cheat then
+	   	local hold=noperfect[ceil(rnd(#noperfect))]
+	   	del(s.ecard,hold)
+		   s:eaddstack(hold.val)
+		   s:addcard(true)
+		   s.lastmove=8
+	   else
+	    local hold={val=0}
+	    for crd in all(place) do
+	     if crd.val>hold.val then
+	      hold=crd
+	     end 
+	    end
+	   	del(s.ecard,hold)
+		   s:eaddstack(hold.val)
+		   s:addcard(true)
+		   s.lastmove=5
+	   end
+	  else--if easy
+	   local hold=place[ceil(rnd(#place))]
+	   s:eaddstack(hold.val)
+	   del(s.ecard,hold)
+	   s:addcard(true)
+	   s.lastmove=6
+	  end
+	 
+	 else
+   local hold=s.ecard[ceil(rnd(#s.ecard))]
+   s:eaddstack(hold.val)
+   del(s.ecard,hold)
+   s:addcard(true)
+   s.lastmove=7
+	 end
 	end,
 	
 	ufade=
@@ -230,10 +325,23 @@ gscene = {
 	 if s.it > 5 and s.it%6==0 and s.ii>0 then
 	 	s:addcard(false)
 	 	s:addcard(true)
-	 	s:addtok(false)
-	 	s:addtok(true)
+	 	if s.php==5 and s.ehp==5 then
+		 	s:addtok(false)
+		 	s:addtok(true)
+		 end
 	 	s.ii-=1
+	 elseif s.it > 5 and s.it%6==0 and s.ii>-1 and s.php==5 and s.ehp==5 then
+	  add(s.ptok,{
+		  s=41,
+				x=120,
+				y=110,
+				ax=120,
+				ay=110,
+				xoff=0
+			})
+	  s.ii-=1
 	 end
+	 
 	end,
 	
 	draw=
@@ -241,21 +349,13 @@ gscene = {
 	 s:ufade()
 		cls()
 		if s.state!="ng" and s.state!="i" then
-			cursor(88,20,1)
-		 print("confirm-❎")
-		 print("   back-🅾️")
+			cursor(86,20,1)
+		 print("❎-confirm")
+		 print("   🅾️-back")
 			local difn={"easy","normal","hard"}
-			print(difn[globedif],1,20,1)
+			print(difn[dif],1,20,1)
 		end
 		
-		local sstate=sub(s.state,1,1)
-		if sstate=="p" then
-			print("⬇️yourturn⬇️",41,92,11)
-		elseif sstate=="e" then
-			print("⬆️enemyturn⬆️",38,30,8)
-		elseif s.state=="ng" and s.php>0 and s.ehp>0 then
-			print("🅾️nextround❎",38,92,9)
-		end
 		//end of state
 		
 		--drawcard
@@ -265,8 +365,8 @@ gscene = {
 			local pcay=pc.ay
 			if pc.val==1 then
 				print("a",pc.ax+2,pc.ay+1,8)
-			elseif pc.val==10 then
-				print("k",pc.ax+2,pc.ay+1,8)
+			elseif pc.ch then
+				print(pc.ch,pc.ax+2,pc.ay+1,8)
 			else
 				print(pc.val,pc.ax+2,pc.ay+1,8)
 			end
@@ -361,10 +461,29 @@ gscene = {
 			t.s*=0.9
 		end
 		
+		local sstate=sub(s.state,1,1)
+		if sstate=="p" then
+			print("⬇️",61,90,11)
+		elseif sstate=="e" then
+			print("⬆️",61,35,8)
+		elseif s.state=="ng" and s.php>0 and s.ehp>0 then
+			print("🅾️nextround❎",38,92,9)
+		end
+		
 		if s.camsh>0	then
 			camera(-2+rnd(4),-2+rnd(4))
 		else
 			camera(0,0)
+		end
+		
+		print(s.lastmove,1,30,7)
+		print(#s.etok,1,38,7)
+		print(s.emich,1,50,7)
+		print(s.laststack,15,30,7)
+		cursor(100,30,7)
+		print(s.ecp)
+		for i in all(s.ecard) do
+		 print(i.val)
 		end
 	end,
 	
@@ -373,10 +492,13 @@ gscene = {
 	 s:uinit()
 		s.it+=1
 		
-		if (s.it>5000) s.it=0
-		
 		if s.state=="i" then
-		 if (#s.pcard>2) s.state="pc"
+		 if (s.ii<0) s.state="pc"
+		 for pc in all(s.pcard) do
+		 	pc.yoff=0
+		 end
+		elseif s.state=="i2" then
+		 if (s.ii<1) s.state="pc"
 		 for pc in all(s.pcard) do
 		 	pc.yoff=0
 		 end
@@ -390,6 +512,8 @@ gscene = {
 				sfx(0)
 			end
 			
+			s.ptsel=#s.ptok
+			
 			for i=1,#s.pcard do
 				if i==s.psel then
 					s.pcard[i].yoff=-8
@@ -402,40 +526,8 @@ gscene = {
 				s.ptok[i].xoff=0
 			end
 		
-		local bpress=0
-		if (btnp(❎)) bpress=1
-		if (btnp(🅾️)) bpress=-1
-		
-		if bpress!=0 then
-				s.camsh=5
-				s:explode()
-				s.stack+=s.pcard[s.psel].val*bpress
-				s.psel=1
-				if s.stack==21 then
-				 s:downhp(true)
-				 s:addtxt("perfect!",50,62,11)
-				 s.state="ng"
-				 sfx(4)
-				elseif s.stack>-1 and s.stack<22 then
-					s.state="e"
-					s.etime=20+ceil(rnd(2*30))
-					local at="-"..s.pcard[s.psel].val
-					local atc=8
-					if bpress>0 then
-						at="+"..s.pcard[s.psel].val
-						atc=11
-					end
-					s:addtxt(at,60,60,atc)
-				else
-					s.state="ng"
-				 s:downhp(false)
-					s:addtxt("aww:(",58,60,8)
-					sfx(6)
-				end
-				sfx(3)
-				deli(s.pcard,s.psel)
-				if (bpress<0) deli(s.ptok,1)
-				s:addcard(false)
+			if btnp(❎) then
+			 s.state="pt"
 			end
 		
 		---
@@ -462,40 +554,40 @@ gscene = {
 				end
 			end
 			
---			if btnp(❎) then
---				local holdv=s.phold[2]*s.ptok[s.ptsel].val
---				s.camsh=5
---				s:explode()
---				s.stack+=holdv
---				del(s.pcard,s.phold[1])
---				del(s.ptok,s.ptok[s.ptsel])
---				s:addcard(false)
---				s:addtok(false)
---				s.psel=1
---				s.ptsel=1
---				if s.stack==21 then
---				 s:downhp(true)
---				 s:addtxt("perfect!",50,62,11)
---				 s.state="ng"
---				 sfx(4)
---				elseif s.stack>-1 and s.stack<22 then
---					s.state="e"
---					s.etime=20+ceil(rnd(2*30))
---					local at="-"..s.phold[2]
---					local atc=8
---					if holdv>0 then
---						at="+"..s.phold[2]
---						atc=11
---					end
---					s:addtxt(at,60,60,atc)
---				else
---					s.state="ng"
---				 s:downhp(false)
---					s:addtxt("aww:(",58,60,8)
---					sfx(6)
---				end
---				sfx(3)
---			end
+			if btnp(❎) then
+				sfx(3)
+				local holdval=s.pcard[s.psel].val
+				local holdcol=11
+				local holdtxt="+"..holdval
+				if s.ptsel!=#s.ptok then
+					holdval*=-1
+					holdcol=8
+					holdtxt=holdval
+					deli(s.ptok,s.ptsel)
+				end
+				s.stack+=holdval
+				del(s.pcard,s.pcard[s.psel])
+				s:addcard(false)
+				s:explode()
+			 s.camsh=5
+				s.psel=1
+				s.ptsel=#s.ptok
+				if s.stack==21 then
+				 s:addtxt("perfect!",50,62,11)
+					s:downhp(true)
+				 s.state="ng"
+				 sfx(4)
+				elseif s.stack<0 or s.stack>21 then
+					s.state="ng"
+				 s:downhp(false)
+					s:addtxt("aww:(",58,60,8)
+					sfx(6)
+				else
+					s.state="e"
+					s.etime=20+ceil(rnd(2*30))
+					s:addtxt(holdtxt,60,60,holdcol)
+				end
+			end
 		---
 		elseif s.state=="e" then
 			for i=1,#s.pcard do
@@ -509,9 +601,12 @@ gscene = {
 			s.etime-=1
 			if s.etime<1 then
 				s:eneplace()
-				sfx(3)
 			end
 		elseif s.state=="ng" then
+			for t in all(s.ptok) do
+				t.xoff=0
+			end
+		
 			if s.php==0 or s.ehp==0 then
 			 s.gof-=1
 			 if (s.ehp<=0 and s.gof<0) then
@@ -525,12 +620,10 @@ gscene = {
 				end
 			else
 				if btnp(❎) or btnp(🅾️) then
-					s.state="i"
+					s.state="i2"
 					s.ii=3
 					s.it=0
 					s.pcard={}
-					s.ptok={}
-					s.etok={}
 					s.ecard={}
 					s.stack=0
 				end
@@ -598,8 +691,7 @@ pall={
 	[13]={0,1,2,5,13},
 	[14]={0,2,4,8,14}
 }
-dif={0.4,0.75,0.96}
-globedif=1
+dif=1
 
 holdtitle=nil
 
@@ -650,11 +742,11 @@ end
 
 function changedif(dir)
  dir = dir or 1
- globedif+=dir
- if globedif==0 then
-  globedif=3
- elseif globedif==4 then
-  globedif=1
+ dif+=dir
+ if dif==0 then
+  dif=3
+ elseif dif==4 then
+  dif=1
  end
 end
 
@@ -737,7 +829,7 @@ function(s)
  print("❎-start")
  print("🅾️-tutorial")
  print("⬅️            ➡️",32,100,7)
- print(diffname[globedif][1],52,100,diffname[globedif][2])
+ print(diffname[dif][1],52,100,diffname[dif][2])
 end
 }
 -->8
@@ -950,22 +1042,22 @@ __gfx__
 0000000077d77e888888888888e77d77778e888888e88e888888e8770088888ee888880000000000000000000000000000000000000000000000000000000000
 0000000077d778888778877888877d777788e8888e8888e8888e88770002888ee888200000000000000000000000000000000000000000000000000000000000
 0000000077d778888778877888877d7777888e88e888888e88e888770000028ee820000000000000000000000000000000000000000000000000000000000000
-0000000077d778888778877888877d77778888ee88888888ee8888770000033bb330000000000000000000000000000000000000000000000000000000000000
-0000000077d778888778877888877d77778888ee88888888ee8888770003333bb333500000000000000000000000000000000000000000000000000000000000
-0000000077d778888888888888877d7777888e88e888888e88e888770033333bb333330000000000000000000000000000000000000000000000000000000000
-0000000077d7788e77777777e8877d777788e8888e8888e8888e88770bb3355555533bb000000000000000000000000000000000000000000000000000000000
-0000000077d77e887777777788e77d77778e888888e88e888888e8770bbb53333335bbb000000000000000000000000000000000000000000000000000000000
-0000000077d777888777777888777d7777e88888888ee88888888e7753b5333773335b3300000000000000000000000000000000000000000000000000000000
-0000000077d777788888888887777d7777e88888888ee88888888e77333533377333533300000000000000000000000000000000000000000000000000000000
-0000000077d77777e888888e77777d77778e888888e88e888888e877333537777773533300000000000000000000000000000000000000000000000000000000
-0000000077d777777777777777777d777788e8888e8888e8888e8877333537777773533300000000000000000000000000000000000000000000000000000000
-0000000077d777777777777777777d7777888e88e888888e88e88877333533377333533300000000000000000000000000000000000000000000000000000000
-0000000077d777777777777777777d77778888ee88888888ee88887753b5333773335b3300000000000000000000000000000000000000000000000000000000
-0000000077d777777777777777777d77778888ee88888888ee8888770bbb53333335bbb000000000000000000000000000000000000000000000000000000000
-0000000077d777777777777777777d7777888e88e888888e88e888770bb3355555533bb000000000000000000000000000000000000000000000000000000000
-00000000777dddddddddddddddddd77777e8e8888e8888e8888e8e770033333bb333330000000000000000000000000000000000000000000000000000000000
-000000007777777777777777777777777777777777777777777777770005333bb333500000000000000000000000000000000000000000000000000000000000
-00000000d7777777777777777777777dd7777777777777777777777d0000053bb350000000000000000000000000000000000000000000000000000000000000
+0000000077d778888778877888877d77778888ee88888888ee8888770000033bb330000000000dd66dd000000000000000000000000000000000000000000000
+0000000077d778888778877888877d77778888ee88888888ee8888770003333bb3335000000dddd66ddd50000000000000000000000000000000000000000000
+0000000077d778888888888888877d7777888e88e888888e88e888770033333bb333330000ddddd66ddddd000000000000000000000000000000000000000000
+0000000077d7788e77777777e8877d777788e8888e8888e8888e88770bb3355555533bb0066dd555555dd6600000000000000000000000000000000000000000
+0000000077d77e887777777788e77d77778e888888e88e888888e8770bbb53333335bbb006665dddddd566600000000000000000000000000000000000000000
+0000000077d777888777777888777d7777e88888888ee88888888e7753b5333773335b335d65ddd77ddd56dd0000000000000000000000000000000000000000
+0000000077d777788888888887777d7777e88888888ee88888888e773335333773335333ddd5ddd77ddd5ddd0000000000000000000000000000000000000000
+0000000077d77777e888888e77777d77778e888888e88e888888e8773335377777735333ddd5d777777d5ddd0000000000000000000000000000000000000000
+0000000077d777777777777777777d777788e8888e8888e8888e88773335377777735333ddd5d777777d5ddd0000000000000000000000000000000000000000
+0000000077d777777777777777777d7777888e88e888888e88e888773335333773335333ddd5ddd77ddd5ddd0000000000000000000000000000000000000000
+0000000077d777777777777777777d77778888ee88888888ee88887753b5333773335b335d65ddd77ddd56dd0000000000000000000000000000000000000000
+0000000077d777777777777777777d77778888ee88888888ee8888770bbb53333335bbb006665dddddd566600000000000000000000000000000000000000000
+0000000077d777777777777777777d7777888e88e888888e88e888770bb3355555533bb0066dd555555dd6600000000000000000000000000000000000000000
+00000000777dddddddddddddddddd77777e8e8888e8888e8888e8e770033333bb333330000ddddd66ddddd000000000000000000000000000000000000000000
+000000007777777777777777777777777777777777777777777777770005333bb33350000005ddd66ddd50000000000000000000000000000000000000000000
+00000000d7777777777777777777777dd7777777777777777777777d0000053bb3500000000005d66d5000000000000000000000000000000000000000000000
 __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
